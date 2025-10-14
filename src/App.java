@@ -6,6 +6,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.sql.*;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -37,16 +38,15 @@ public class App {
                 continue;
             }
 
-            if(operation < 1 || operation > 4) {
+            if(operation < 1 || operation > 5) {
                 System.out.println("Sbagliato riprova");
                 continue;
             }
 
-            //System.out.println("Bravo");
-
             switch(operation){
                 case 1:
                     try{
+                        //Leggi tutto
                         Pizza[] pizze = getAllPizze();
                         AsciiTable asciiTable = new AsciiTable();
                         asciiTable.addRule();
@@ -63,6 +63,7 @@ public class App {
                     break;
                 case 2:
                     try {
+                        //Leggi singola pizza
                         System.out.println("Inserisci l'ID della pizza");
                         String id = sc.nextLine();
                         Pizza pizza = getPizza(id);
@@ -78,8 +79,13 @@ public class App {
                     }
                     break;
                 case 3:
+                    //Crea pizza
 
                 case 4:
+                    //Aggiorna pizza
+
+                case 5:
+                    //Elimina pizza
 
                     default:
 
@@ -89,18 +95,12 @@ public class App {
 
     public Pizza[] getAllPizze() throws IOException {
         Request request = new Request.Builder()
-                .url("https://crudcrud.com/api/4785f11850b24426b2f4d5095ac19077/pizze")
+                .url("https://crudcrud.com/api/130cf77fffb14d32a3308158db7c1015/pizze")
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
 
-            //stampa l'header
-//            Headers responseHeaders = response.headers();
-//            for (int i = 0; i < responseHeaders.size(); i++) {
-//                System.out.println(responseHeaders.name(i) + ": " + responseHeaders.value(i));
-//            }
-
-            //deserializza il json body
+            //deserializza il json body (conversione testo in oggetto)
             String json = response.body().string();
             Gson gson = new Gson();
             Pizza[] pizze = gson.fromJson(json, Pizza[].class);
@@ -109,12 +109,11 @@ public class App {
             }
             return pizze;
         }
-
     }
 
     public Pizza getPizza(String id) throws IOException {
         Request request = new Request.Builder()
-                .url("https://crudcrud.com/api/4785f11850b24426b2f4d5095ac19077/pizze/" + id)
+                .url("https://crudcrud.com/api/130cf77fffb14d32a3308158db7c1015/pizze/" + id)
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
@@ -133,6 +132,44 @@ public class App {
 
     // Provo PUT
     public void run() {
-            menu();
+            testSqlite();
+            return;
+            //menu();
+    }
+
+    public void testSqlite() {
+        String DB_URL = "jdbc:sqlite:test.db";
+
+        try{
+            java.sql.Connection conn = DriverManager.getConnection(DB_URL);
+            if(conn != null){
+                System.out.println("Connessione al database avvenuta con successo!");
+            }
+
+            String sqlCreateTable = """
+                CREATE TABLE IF NOT EXISTS pizze(
+                    id VARCHAR(50) PRIMARY KEY,
+                    nome VARCHAR(50),
+                    ingredienti VARCHAR(200),
+                    prezzo DOUBLE);
+                """;
+
+            Statement statement = conn.createStatement();
+            statement.execute(sqlCreateTable);
+            System.out.println("La tabella pizze è stata creata con successo!");
+
+            String sqlInsert = "INSERT INTO pizze VALUES (?,?,?,?);";
+
+            PreparedStatement insertStatement = conn.prepareStatement(sqlInsert);
+            insertStatement.setString(1, "abcdef");
+            insertStatement.setString(2, "Margherita");
+            insertStatement.setString(3, "Mozzarella, Pomodoro");
+            insertStatement.setDouble(4, 6.0);
+            insertStatement.execute();
+
+        }catch(SQLException e){
+            System.out.println("Errore" + e.getMessage());
+        }
+
     }
 }
