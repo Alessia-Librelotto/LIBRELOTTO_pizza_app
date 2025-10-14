@@ -3,8 +3,14 @@ public class Pizza {
     public String ingredienti;
     public double prezzo;
 
+    public Pizza(String nome, String ingredienti, double prezzo) {
+        this.nome = nome;
+        this.ingredienti = ingredienti;
+        this.prezzo = prezzo;
+    }
+
     @Override
     public String toString(){
-        return nome + "..." + ingredienti + "..." + prezzo;
+        return "Nome: " + nome + "  Ingredienti: " + ingredienti + "  Prezzo: " + prezzo;
     }
 }
