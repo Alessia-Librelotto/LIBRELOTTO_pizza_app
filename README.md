@@ -1,6 +1,6 @@
 # Pizza_Restaurant
 
-# Funzionalità principali
+## Funzionalità principali
 - 📖 **Leggi tutte le pizze**
 - 🔍 **Leggi singola pizza** tramite ID
 - ➕ **Crea nuova pizza**
