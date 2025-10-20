@@ -1,9 +1,6 @@
 import com.google.gson.Gson;
 import de.vandermeer.asciitable.AsciiTable;
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 
 import java.io.IOException;
 import java.sql.*;
@@ -16,6 +13,8 @@ public class App {
     public App() {
         client = new OkHttpClient();
     }
+
+    private static final String BASE_URL = "https://crudcrud.com/api/b9b3aae0d3164e719c9705da53f624e9/pizze";
 
     public void menu(){
         Scanner sc = new Scanner(System.in);
@@ -79,14 +78,30 @@ public class App {
                     }
                     break;
                 case 3:
-                    //Crea pizza
-
+                    try {
+                        //Crea una nuova pizza
+                        createPizza();
+                    }catch(Exception e){
+                        System.out.println("Errore nella creazione: " + e.getMessage());
+                    }
+                    break;
                 case 4:
-                    //Aggiorna pizza
+                    try {
+                        //Modifica una pizza già esistente
+                        updatePizza();
+                    }catch(Exception e){
+                        System.out.println("Errore nell'aggiornamento: " + e.getMessage());
+                    }
+                    break;
 
                 case 5:
-                    //Elimina pizza
-
+                    try {
+                        //Elimina una pizza
+                        deletePizza();
+                    }catch(Exception e){
+                        System.out.println("Errore nell'eliminazione: " + e.getMessage());
+                    }
+                    break;
                     default:
 
             }
@@ -95,7 +110,7 @@ public class App {
 
     public Pizza[] getAllPizze() throws IOException {
         Request request = new Request.Builder()
-                .url("https://crudcrud.com/api/130cf77fffb14d32a3308158db7c1015/pizze")
+                .url(BASE_URL)
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
@@ -113,28 +128,118 @@ public class App {
 
     public Pizza getPizza(String id) throws IOException {
         Request request = new Request.Builder()
-                .url("https://crudcrud.com/api/130cf77fffb14d32a3308158db7c1015/pizze/" + id)
+                .url(BASE_URL + "/" + id)
                 .build();
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
 
-            System.out.println(response.body().string());
-            Gson gson = new Gson();
-            Pizza pizza = gson.fromJson(response.body().string(), Pizza.class);
+            String json = response.body().string();
+            //System.out.println(json);
 
+            Gson gson = new Gson();
+            Pizza pizza = gson.fromJson(json, Pizza.class);
             return pizza;
         }
     }
 
-    // PER CASA
-    // Faccio la funzione createPizza con richiesta POST
-    // usando il costruttore di Pizza.java
+    public void createPizza() throws IOException {
+        Scanner sc = new Scanner(System.in);
 
-    // Provo PUT
+        System.out.println("Inserisci il nome della pizza:");
+        String nome = sc.nextLine();
+
+        System.out.println("Inserisci gli ingredienti (separati da virgola):");
+        String ingredienti = sc.nextLine();
+
+        System.out.println("Inserisci il prezzo:");
+        double prezzo = sc.nextDouble();
+        sc.nextLine();
+
+        Pizza nuovaPizza = new Pizza(nome, ingredienti, prezzo);
+        Gson gson = new Gson();
+        String json = gson.toJson(nuovaPizza);
+
+        RequestBody body = RequestBody.create(
+                MediaType.parse("application/json"),
+                json
+        );
+
+
+        Request request = new Request.Builder()
+                .url(BASE_URL)
+                .post(body)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Errore creazione pizza: " + response);
+            }
+            System.out.println("Pizza creata con successo!");
+        }
+    }
+
+    public void updatePizza() throws IOException {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("Inserisci l'ID della pizza da aggiornare:");
+        String id = sc.nextLine();
+
+        System.out.println("Inserisci il nuovo nome:");
+        String nome = sc.nextLine();
+
+        System.out.println("Inserisci i nuovi ingredienti:");
+        String ingredienti = sc.nextLine();
+
+        System.out.println("Inserisci il nuovo prezzo:");
+        double prezzo = sc.nextDouble();
+        sc.nextLine();
+
+        Pizza pizzaAggiornata = new Pizza(nome, ingredienti, prezzo);
+        Gson gson = new Gson();
+        String json = gson.toJson(pizzaAggiornata);
+
+        RequestBody body = RequestBody.create(
+                MediaType.parse("application/json"),
+                json
+        );
+
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/" + id)
+                .put(body)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Errore aggiornamento pizza: " + response);
+            }
+            System.out.println("Pizza aggiornata con successo!");
+        }
+    }
+
+    public void deletePizza() throws IOException {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("Inserisci l'ID della pizza da eliminare:");
+        String id = sc.nextLine();
+
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/" + id)
+                .delete()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Errore eliminazione pizza: " + response);
+            }
+            System.out.println("Pizza eliminata con successo!");
+        }
+    }
+
     public void run() {
             testSqlite();
-            return;
-            //menu();
+            //return;
+            menu();
+        return;
     }
 
     public void testSqlite() {
